@@ -9,11 +9,8 @@ The first example (and only one currently filled in) is called ["Simple Agreemen
 
 More examples are to come (including: a p2p gossip protocol that uses randomness to select subset of neighbors, as well as Paxos, Dolev-Strong, and Tendermint). This repository also specifies some abstract modules that include definitions and theorems meant to be reused across theories such as the abstract specifications of Byzantine Broadcast & State Machine Replication.
 
-Contents:
-- Byzantine Broadcat [ ]
-- State Machine Replication [ ]
-- Simple Agreement [X]
-- Paxos [ ]
-- Dolev-Strong [ ]
-- P2P Gossip [ ]
-- 
+- Progress
+    - [x] Simple Agreement
+    - [ ] Paxos
+    - [ ] Dolev-Strong
+    - [ ] P2P Gossip
