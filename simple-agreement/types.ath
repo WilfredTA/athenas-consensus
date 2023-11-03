@@ -1,0 +1,36 @@
+load "sets"
+load "list-of"
+load "nat-plus"
+load "dmaps"
+load "pairs"
+open Set
+
+transform-output eval [nat->int]
+define-sort Id := N
+define-sort Val := N
+define-sort ProcId := N
+
+define [zero one two three] := [N.zero N.one N.two (S N.two)]
+
+datatype Msg := (Accept Val) | (Propose Val)
+
+# Recv = sender msg
+datatype Event := (Recv Id Msg) | (Req Val) |  Timeout
+# Sender, Recipient, Msg tripe
+datatype MsgRecord := (Sent Id Id Msg)
+
+datatype LocalState := Empty | (Nonempty Val)
+define-sort ProcState := (DMap.DMap ProcId LocalState)
+define-sort MessageHistory := (Set MsgRecord)
+
+datatype GlobalState := (state msgs:MessageHistory procs:(Set ProcId) procStates:(DMap.DMap ProcId LocalState))
+
+declare is-proposer, is-acceptor: [ProcId] -> Boolean
+declare valid-event, invalid-event: [Event ProcId MessageHistory] -> Boolean
+declare proposer-step, acceptor-step, consensus-step: [ProcId LocalState Event] -> (Pair LocalState (Set MsgRecord))
+
+define [e e1 e2 m m1 m2 m3 v v1 v2 v3 p p1 p2 p3 s s1 s2 mr mr1 mr2 mr3 ls msgs ps] := [
+    ?e:Event ?e1:Event ?e2:Event ?m:Msg ?m1:Msg ?m2:Msg ?m3:Msg ?v:Val ?v1:Val ?v2:Val ?v3:Val ?p:ProcId ?p1:Id ?p2:Id ?p3:Id ?s:MessageHistory ?s1:MessageHistory ?s2:MessageHistory
+    ?mr:MsgRecord ?mr1:MsgRecord ?mr2:MsgRecord ?mr3:MsgRecord ?ls:LocalState ?msgs:MessageHistory
+    ?ps:ProcState
+]

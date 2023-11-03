@@ -1,0 +1,56 @@
+load "./types.ath"
+
+assert* is-proposer-def := [
+    (~ is-proposer zero)
+    (is-proposer (S _))
+]
+
+assert* is-acceptor-def := [
+    (is-acceptor zero)
+    (~ is-acceptor (S _))
+]
+
+assert* valid-event-def := [
+    (valid-event (Req _) _ _)
+    (valid-event Timeout _ _)
+    ((valid-event (Recv p1 m) p s) <==> (Sent p1 p m) in s)
+    ((~ valid-event e p s) <==> (invalid-event e p s))
+    ((valid-event e p s) <==> (~ invalid-event e p s))
+]
+
+
+assert* acceptor-step-def := [
+    ((acceptor-step p Empty (Recv p1 (Propose v))) = (pair (Nonempty v) (insert (Sent p p1 (Accept v))  null)))
+    ((acceptor-step p (Nonempty v1) (Recv p1 (Propose v))) = (pair (Nonempty v1) (insert (Sent p p1 (Accept v1))  null)))
+    ((acceptor-step p ls (Req _)) = (ls @ null))
+    ((acceptor-step p ls Timeout) = (ls @ null))
+]
+
+assert* proposer-step-def := [
+    ((proposer-step p Empty (Req v)) = (pair Empty (insert (Sent p zero (Propose v)) null)))
+    ((proposer-step p Empty (Recv _ (Accept v))) = (pair (Nonempty v) null))
+    ((proposer-step p (Nonempty v) _) = (pair (Nonempty v) null))
+]
+
+assert* consensus-step-def := [
+    ((consensus-step zero ls e) = proposer-step zero ls e)
+    ((consensus-step (S p) ls e) = acceptor-step (S p) ls e)
+]
+
+
+
+
+# Examples and tests
+define gs1-example := (insert (Sent zero one (Propose two)) null)
+
+
+(!prove (valid-event (Recv zero (Propose two)) one gs1-example) (ab))  # true
+(eval (acceptor-step one Empty (Recv zero (Propose two))))  # (Nonempty two, {Sent one zero (Accept two)})
+(eval (proposer-step one Empty (Req two)))  # (Empty, {Sent one zero (Propose two)})
+(eval (proposer-step one Empty (Recv two (Accept two))))  # (Nonempty two, {})
+(eval (proposer-step one (Nonempty (S two)) (Recv two (Accept two))))  # (Nonempty (S two), {})
+
+
+(eval (consensus-step zero (Nonempty (S two)) (Recv two (Accept two)))) # (Nonempty (S two), {})
+(eval (acceptor-step one Empty (Recv zero (Propose two))))  # (Nonempty two, {Sent one zero (Accept two)})
+#(!prove (invalid-event (Recv zero (Propose two)) one gs1-example) (ab))  # should fail

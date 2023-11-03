@@ -1,0 +1,55 @@
+load "./network-semantics.ath"
+
+
+define [at update] := [DMap.apply DMap.update]
+# Invariant 1:
+# if there exists a process p whose local state is non-empty and contains value 'v',
+# then some other process p' who must have sent `Accept v` to p.
+
+define (proc-state-set-implies-accept-sent msgs proc-states) := (
+    forall ?p:ProcId ?v:N . 
+        is-proposer ?p &
+        ((proc-states at ?p) = (Nonempty ?v)) ==>
+        exists ?p2:ProcId . (Sent ?p2 ?p (Accept ?v)) in msgs
+)
+
+# Invariant 2: 
+# If the message `Accept v` has been sent, then the acceptor must have the local state `Nonempty v`
+define (accept-msg-sent-implies-acceptor-decided msgs proc-states) := (
+    forall p1 p2 v . 
+        ((Sent p1 p2 (Accept v)) in msgs) ==>
+        (proc-states at zero) = (Nonempty v)
+)
+
+# If invariant holds already, then it continues to hold after a propose is sent to the proposer
+define invariant-propose := (
+    forall msgs ps p . 
+        (proc-state-set-implies-accept-sent msgs  ps) &
+        (accept-msg-sent-implies-acceptor-decided msgs  ps) 
+        ==> 
+        (proc-state-set-implies-accept-sent (insert (Sent p zero (Propose v)) msgs)  ps) &
+        (accept-msg-sent-implies-acceptor-decided (insert (Sent p zero (Propose v)) msgs) ps)
+)
+
+# IF invariants holds already, then it continues to hold after acceptor sends `Accept v` to proposer
+define invariant-decide := (
+    forall msgs ps p .
+    (proc-state-set-implies-accept-sent msgs  ps) &
+    (accept-msg-sent-implies-acceptor-decided msgs  ps)
+    ==>
+    (proc-state-set-implies-accept-sent (insert (Sent zero p (Accept v)) msgs)  ps) &
+    (accept-msg-sent-implies-acceptor-decided (insert (Sent zero p (Accept v)) msgs)  ps)
+)
+
+# If accept msg already sent to proposer 
+# and if invariants already hold, 
+# then they hold even after proposer has updated its state
+define invariant-learn := (
+    forall msgs ps p p1 v .
+    ((Sent p1 p (Accept v)) in msgs) &
+    (proc-state-set-implies-accept-sent msgs ps) &
+    (accept-msg-sent-implies-acceptor-decided msgs  ps)
+    ==>
+    (proc-state-set-implies-accept-sent msgs (update (pair p (Nonempty v)) ps)) &
+    (accept-msg-sent-implies-acceptor-decided msgs (update (pair p (Nonempty v)) ps))
+)
